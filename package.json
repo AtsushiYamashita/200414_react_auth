@@ -4,7 +4,9 @@
   "description": "https://auth0.com/blog/jp-react-tutorial-building-and-securing-your-first-app/",
   "main": "server.js",
   "scripts": {
-    "test": "echo 'test'"
+    "test": "echo 'test'",
+    "serve": " ./node_modules/.bin/ts-node --files -r tsconfig-paths/register -P backend/tsconfig.json backend/src/server.ts",
+    "_test_send_02":"curl -d @.temp/sample_02.json -X POST -H 'Content-Type: application/json' localhost:8018"
   },
   "repository": {
     "type": "git",
