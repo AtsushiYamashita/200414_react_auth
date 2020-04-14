@@ -1,0 +1,48 @@
+{
+  "name": "200414_react_auth_backend",
+  "version": "0.0.1",
+  "description": "https://auth0.com/blog/jp-react-tutorial-building-and-securing-your-first-app/",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo 'test'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AtsushiYamashita/200414_react_auth.git"
+  },
+  "keywords": [
+    "npm",
+    "auth0",
+    "react",
+    "typescript",
+    "tutorial",
+    "backend"
+  ],
+  "author": "Atsushi Yamashita",
+  "license": "SEE LICENSE IN https://auth0.com/blog/jp-react-tutorial-building-and-securing-your-first-app/",
+  "bugs": {
+    "url": "https://github.com/AtsushiYamashita/200414_react_auth/issues"
+  },
+  "homepage": "https://github.com/AtsushiYamashita/200414_react_auth#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "helmet": "^3.22.0",
+    "lodash": "^4.17.15",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.19.0",
+    "@types/cors": "^2.8.6",
+    "@types/express": "^4.17.6",
+    "@types/helmet": "0.0.45",
+    "@types/lodash": "^4.14.149",
+    "@types/morgan": "^1.9.0",
+    "@types/node": "^13.11.1",
+    "shorter-dts": "^1.0.1",
+    "ts-node": "^8.8.2",
+    "typescript": "^3.8.3"
+  }
+}
