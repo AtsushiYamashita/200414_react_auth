@@ -27,7 +27,7 @@ const {
 } = process.env;
 
 const PORT = process.env.PORT || LISTEN_PORT || 8018
-if(!LOAD || LOAD !== "localhost".toUpperCase()) throw new Error("Faild to load .env file");
+if (!LOAD || LOAD !== "localhost".toUpperCase()) throw new Error("Faild to load .env file");
 
 const check_jwt = jwt({
     secret: jwksRsa.expressJwtSecret({
@@ -63,27 +63,23 @@ function start_server() {
     app.use(helmet());
     app.use(bodyparser.json());
     app.use(cors());
+    app.use(morgan('combined')); // Log http requests
 
-    // Log http requests
-    app.use(morgan('combined'));
 
-    // retrieve all questions
-    app.get('/', (req, res) => {
+    function retrieve_all_questions(req: Request, res: Response) {
         const qs = questions.map(q => q.summary)
         res.send(qs);
-    })
+    }
 
-
-    app.get("/:id", (req, res) => {
+    function retrieve_question_from_id(req: Request, res: Response) {
         const [parseable, id] = parse_id(req.params);
         const [status, qt] = get_question(parseable && id || -1);
         console.log(">> 73", status, qt);
         return res.status(status).send(qt);
-    })
+    }
 
-    /**
-     * insert a new question
-     */
+
+
     function insert_new_question(req: Request, res: Response) {
         console.log(">> 78", req.body);
         const { title, description } = req.body;
@@ -95,9 +91,8 @@ function start_server() {
         questions.push(question);
         res.status(200).send();
     }
-    app.post("/",check_jwt,  insert_new_question)
 
-    function insert_new_answer(req: Request, res: Response){
+    function insert_new_answer(req: Request, res: Response) {
         const { answer } = req.body;
         const [parseable, id] = parse_id(req.params);
         const [status, qt] = get_question(parseable && id || -1);
@@ -107,14 +102,22 @@ function start_server() {
         console.log(">> 93", qt)
         res.status(200).send();
     }
-    app.post("/answer/:id",check_jwt,  insert_new_answer)
+
+    // No-Validate get api <= for not sign uped user
+    app.get('/', retrieve_all_questions)
+    app.get("/:id", retrieve_question_from_id)
+
+    // Validate post api
+    app.post("/", check_jwt, insert_new_question)
+    app.post("/answer/:id", check_jwt, insert_new_answer)
 
 
     app.listen(PORT, () => {
         console.log("listening on http://localhost:" + PORT)
     })
+
     process.on("SIGINT", () => {
-        console.log("server close SIGINT@" + PORT)
+        console.log("server close >> " + PORT)
         process.exit(0);
     })
 }
