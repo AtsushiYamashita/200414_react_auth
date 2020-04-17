@@ -10,6 +10,7 @@
     "@types/node": "^12.12.35",
     "@types/react": "^16.9.34",
     "@types/react-dom": "^16.9.6",
+    "auth0-js": "^9.13.2",
     "axios": "^0.19.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -40,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "@types/auth0-js": "^9.12.4",
     "@types/axios": "^0.14.0",
     "@types/react-router": "^5.1.5",
     "@types/react-router-dom": "^5.1.4"
