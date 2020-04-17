@@ -78,6 +78,21 @@ function start_server() {
         return res.status(status).send(qt);
     }
 
+    function retrieve_auth0_option(req:Request,res:Response){
+        if (!AUTH0_DOMAIN) { return res.status(500).send(); }
+        const opt = {
+            // the following three lines MUST be updated
+            domain: AUTH0_DOMAIN,
+            audience: `https://${AUTH0_DOMAIN}/userinfo`,
+            clientID: AUTH0_CLIENT_ID,
+            redirectUri: 'http://localhost:3000/callback',
+            responseType: 'id_token',
+            scope: 'openid profile'
+          }
+
+        return res.send(opt)
+    }
+
 
 
     function insert_new_question(req: Request, res: Response) {
@@ -106,6 +121,7 @@ function start_server() {
     // No-Validate get api <= for not sign uped user
     app.get('/', retrieve_all_questions)
     app.get("/:id", retrieve_question_from_id)
+    app.get("/auth-option", retrieve_auth0_option)
 
     // Validate post api
     app.post("/", check_jwt, insert_new_question)
