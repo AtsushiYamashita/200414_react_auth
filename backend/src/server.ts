@@ -68,7 +68,7 @@ function start_server() {
 
     function retrieve_all_questions(req: Request, res: Response) {
         const qs = questions.map(q => q.summary)
-        res.send(qs);
+        return res.send(qs);
     }
 
     function retrieve_question_from_id(req: Request, res: Response) {
@@ -78,7 +78,7 @@ function start_server() {
         return res.status(status).send(qt);
     }
 
-    function retrieve_auth0_option(req:Request,res:Response){
+    function retrieve_auth0_option(req: Request, res: Response) {
         if (!AUTH0_DOMAIN) { return res.status(500).send(); }
         const opt = {
             // the following three lines MUST be updated
@@ -88,7 +88,7 @@ function start_server() {
             redirectUri: 'http://localhost:3000/callback',
             responseType: 'id_token',
             scope: 'openid profile'
-          }
+        }
 
         return res.send(opt)
     }
@@ -104,7 +104,7 @@ function start_server() {
             title, description, auther);
         console.log(">> 82", question)
         questions.push(question);
-        res.status(200).send();
+        return res.status(200).send();
     }
 
     function insert_new_answer(req: Request, res: Response) {
@@ -115,17 +115,42 @@ function start_server() {
         const author = { name: _.get(req, "user.name", "") }
         qt.answers.push({ answer, author });
         console.log(">> 93", qt)
-        res.status(200).send();
+        return res.status(200).send();
     }
 
     // No-Validate get api <= for not sign uped user
-    app.get('/', retrieve_all_questions)
-    app.get("/:id", retrieve_question_from_id)
-    app.get("/auth-option", retrieve_auth0_option)
+
+    const sp = (str:string,len:number) => ("                    " + str).slice(-len);
+
+    const set = (type: "get" | "post", path: string, handler: (req: Request, res: Response) => any) => {
+        type === "get" && app.get(path, handler) ;
+        type === "post" && app.post(path, check_jwt, handler);
+        console.log(sp(type,5), sp(path,15), sp(handler.name,-15))
+    }
+
+    set("get", '/authopt2/', retrieve_auth0_option)
+    set("get", '/authopt/', retrieve_all_questions)
+    set("get", '/:id/', retrieve_question_from_id)
+    set("get", '/', retrieve_all_questions)
+    set("post", '/answer/:id/', insert_new_answer)
+    set("post", '/', insert_new_question)
+
+    // console.log(app.path())
+    // console.log(app.router)
+    // console.log(app.routes)
+    // const sp = (str:string,len:number) => ("                    " + str).slice(-len);
+    // const api = app._router.stack.map((e: any, i: number) => `[${sp(""+i,2)}] name=${sp(e.name,15)} path=${sp(e.path,3)} regexp=${sp(e.regexp,20)}`);
+    // console.log(api)
+
+    // app.get('/', retrieve_all_questions)
+    // app.get("/", retrieve_question_from_id)
+    // app.get("/authopt", retrieve_auth0_option)
+    // app.get("/authopt", retrieve_all_questions)
 
     // Validate post api
-    app.post("/", check_jwt, insert_new_question)
-    app.post("/answer/:id", check_jwt, insert_new_answer)
+    // app.post("/", check_jwt, insert_new_question)
+    // app.post("/", insert_new_question)
+    // app.post("/answer/:id", insert_new_answer)
 
 
     app.listen(PORT, () => {
@@ -133,7 +158,7 @@ function start_server() {
     })
 
     process.on("SIGINT", () => {
-        console.log("server close >> " + PORT)
+        console.log("\nserver close << " + PORT)
         process.exit(0);
     })
 }
