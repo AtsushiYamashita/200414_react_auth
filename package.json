@@ -1,6 +1,6 @@
 {
   "name": "200414_react_auth",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "https://auth0.com/blog/jp-react-tutorial-building-and-securing-your-first-app/",
   "main": "server.js",
   "scripts": {
