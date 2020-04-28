@@ -4,13 +4,14 @@ import _ from "lodash"
 type Pack<V> = Set<string, V>
 type Notify<V> = Func<Pack<V>, void>;
 type Validater<V> = Func<Pack<V>, boolean>;
+
 type Rejector<V> = Func<V, boolean>;
 type Apply<V> = Func<V, void>;
-type Chain<V,R> = Func<V, R>;
+type Chain<V, R> = Func<V, R>;
 
 interface IObserver<V> {
    add_call(f: Apply<V>): IObserver<V>;
-   add_call_chain<R>(f: Chain<V,R>):  Promise<R>;
+   add_call_chain<R>(f: Chain<V, R>): Promise<R>;
    add_notify(f: Notify<V>): IObserver<V>;
    add_rejector(f: Rejector<V>): IObserver<V>;
    add_validater(f: Validater<V>): IObserver<V>;
@@ -20,21 +21,17 @@ interface IObserver<V> {
    value(): V[];
 };
 
-
 class Observer<V> implements IObserver<V>{
    private observed: Pack<V>[];
    private validater: Validater<V>[];
    private notify: Notify<V>[];
    private call: Apply<V>[];
-   private first_value: V[];
 
    constructor(v?: V, private length: number = 1) {
       this.observed = v ? [["init", v]] : [];
       this.notify = [];
       this.validater = [];
       this.call = [];
-      this.first_value = [];
-
 
       this.add_call = this.add_call.bind(this);
       this.add_notify = this.add_notify.bind(this);
@@ -52,6 +49,11 @@ class Observer<V> implements IObserver<V>{
       return this;
    }
 
+   static chain<V>(v?: V): Promise<Set<V, Observer<V>>> {
+      const ret = new Observer<V>();
+      return ret.add_call_chain(v2 => [v || v2, ret]);
+   }
+
    push(pack: Pack<V>): boolean {
       const val = pack[1];
 
@@ -60,7 +62,7 @@ class Observer<V> implements IObserver<V>{
       if (same_value) return false;
 
       const rejected = _(this.validater)
-         .map(f => (f(pack)))
+         .map(f => f(pack))
          .filter(e => !!e)
          .value().length;
 
@@ -70,9 +72,6 @@ class Observer<V> implements IObserver<V>{
          .slice(-this.length);
       this.notify.forEach(f => f(pack));
       this.call.forEach(f => f(val));
-      if (this.first_value.length > 0) {
-         this.first_value.push(val);
-      }
       this.call = [];
       return true;
    }
@@ -90,15 +89,12 @@ class Observer<V> implements IObserver<V>{
       return this;
    }
 
-   add_call_chain<R>(f: Chain<V,R>):  Promise<R>{
-      return new Promise<V>((res,rej)=>{
-         if(this.is_null()){
-            return this.call.push(res);
-         }
-         res(this.value()[0])
+   add_call_chain<R>(f: Chain<V, R>): Promise<R> {
+      return new Promise<V>((res, _) => {
+         if (this.is_null()) return this.call.push(res);
+         res(this.value()[0]);
       }).then<R>(f);
    }
-
 
    add_notify(f: Notify<V>): IObserver<V> {
       this.notify.push(f);

@@ -1,5 +1,5 @@
 import auth0 from "auth0-js"
-import { Map, Func, Set, Dic } from "shorter-dts"
+import { Func } from "shorter-dts"
 import _ from "lodash"
 import Observer from "./Observe"
 
@@ -7,11 +7,8 @@ const AUTH_API_SERVER = "http://localhost:8018/";
 const REACT_SERVER = "http://localhost:3000/";
 
 
-const wrap = function <V, N>(s: Func<V, N>) {
-    return (a: V) => { s(a); return a; }
-}
-const logger = <V,>(m: any) => wrap<V,any>(v => console.log(m, v))
 
+type AuthParsedHash = auth0.Auth0DecodedHash;
 
 type AuthProfile = {
     name: string;
@@ -40,15 +37,15 @@ class Auth {
         // option.add_call(logger("L:83 "));
         self.option
             // .add_call(logger<auth0.AuthOptions>("L:86"))
-            .add_call_chain(e=>new auth0.WebAuth(e))
+            .add_call_chain(e => new auth0.WebAuth(e))
             .then(self.auth0.update);
+
 
         fetch(
             AUTH_API_SERVER + "authopt2", {
             credentials: 'same-origin'
         }).then(res => res.json().then(option.update))
             .catch(console.error);
-        console.log("serlf is", self)
         return self;
     }
 
@@ -56,11 +53,11 @@ class Auth {
         this.auth0 = new Observer();
         this.option = new Observer();
         this.profile = new Observer();
+        this.profile.add_notify(e=>console.log(` Profile`,e))
         this.idToken = new Observer();
         this.expiresAt = -1;
 
-        this.auth0.add_notify(logger("L:118"));
-        const ObservedValues =         [
+        const ObservedValues = [
             this.auth0,
             this.option,
             this.profile,
@@ -72,26 +69,38 @@ class Auth {
         );
         this.idToken.add_rejector(_.isString);
         this.profile
-            .add_rejector(e => new Date().getTime() < e.exp * 1000)
+            // .add_rejector(e => new Date().getTime() < e.exp * 1000)
             .add_notify(([m, v]) => this.expiresAt = v.exp * 1000);
 
         const methods = [
-            this.self,
-            this.getIdToken,
-            this.handleAuthentication,
-            this.isAuthenticated,
-            this.self,
+            this.silentAuth,
+            this.signOut,
             this.signIn,
-            this.signOut
+            this.setSession,
+            this.self,
+            this.isAuthenticated,
+            this.handleAuthentication,
+            this.getIdToken,
         ];
 
         const funcs = _(methods)
             .map(e => e as any as Function)
             .filter(_.isFunction)
-            .map(e => /*logger<string>("L:136")(e.name) */ e.name )
+            .map(e => /*logger<string>("L:136")(e.name) */ e.name)
             .value();
         _.bindAll(this, funcs)
     }
+
+    silentAuth() {
+        return new Promise<any[]>((resolve, reject) => {
+            this.auth0.add_call_chain(e => e.checkSession({}, (err, token) => {
+                if (err) return reject([err]);
+                this.setSession(token);
+                resolve([]);
+            }))
+        })
+    }
+
     self() {
         return this;
     }
@@ -106,10 +115,7 @@ class Auth {
 
     isAuthenticated(): boolean {
         // return new Date().getTime() < this.expiresAt;
-        return _([this.expiresAt])
-            .map(e => new Date().getTime() < e)
-            .filter()
-            .toLength() > 0;
+        return new Date().getTime() < this.expiresAt
     }
 
     signIn() {
@@ -120,48 +126,49 @@ class Auth {
         return;
     }
 
-    handleAuthentication() {
-        console.log("---- handler");
-        type Hash = auth0.Auth0DecodedHash;
-        const hash = new Observer<Hash>();
-        hash.add_rejector(e => !!e)
-            .add_rejector(e => !!e.idToken)
-            .add_rejector(e => !!e.idTokenPayload);
-        hash.add_call(e => this.idToken.push(["", e.idToken as string]))
-            .add_call(e => this.profile.push(["", e.idTokenPayload as AuthProfile]));
+    setSession(authResult: AuthParsedHash) {
+        const hash = new Observer<AuthParsedHash>();
+        hash.add_rejector(e => !e)
+            .add_rejector(e => !e.idToken)
+            .add_rejector(e => !e.idTokenPayload);
 
-        const to_hash = (user: auth0.WebAuth) => new Promise<Hash>((res, rej) => {
-            console.log("user ---",user);
-            user.parseHash((err, hash) => logger(`eee = ${err} ${JSON.stringify(err)} \nhash=${hash}`)([{err,hash}]) &&  err && rej(err) || res(hash as Hash));
-            // sub(console.log,console.log)("tohash");
+        hash.add_call_chain(e => (e.idToken as string))
+            .then(this.idToken.update);
+
+        hash.add_call_chain(e => (e.idTokenPayload as AuthProfile))
+            .then(this.profile.update);
+
+        return hash.update(authResult);
+    }
+
+    handleAuthentication() {
+        const to_hash = (user: auth0.WebAuth) => new Promise<AuthParsedHash>((res, rej) => {
+            user.parseHash((err, hash) => !!err ? rej(err) : res(hash as AuthParsedHash));
         })
-        const hash_opt = (user:auth0.WebAuth) => _.merge(user, { hash: window.location.hash });
+        const hash_opt = (user: auth0.WebAuth) => _.merge(user, { hash: window.location.hash });
 
         return new Promise<number[]>((res, rej) => {
-            this.auth0
-                .add_call_chain(hash_opt)
+            this.auth0.add_call_chain(hash_opt)
                 .then(to_hash)
-                .then(logger("L:187"))
-                .then(e=>hash.update(e) && e || logger("L:188")(e)  )
-                .then(e=>e && res([]))
-                .catch(e=>rej([102,e]));
-                // .add_call(user => _.chain(user))//to_hash(hash_opt())
-                //     .then(e => [console.log("L 192 >>", e)] && hash.push(["", e]))
-                //     .then(e => e ? res([]) : rej([1000]))
-                //     .catch(e => rej([1002, e]))
-                // );
-            // const user = _.chain(this.auth0).head().value();
-            // sleep(100, _ => param(res, rej), (n) => console.log("loop", n) || !!this.auth0[0]);
+                .then(e => this.setSession(e as AuthParsedHash))
+                .then(e => e && res([]))
+                .catch(e => rej([102, e]));
         })
     }
 
     signOut() {
         // clear id token, profile, and expiration
+        this.auth0.add_call_chain(e => e)
+        .then(e => e.logout({
+            returnTo: REACT_SERVER,
+            clientID: this.option.value()[0]?.clientID,
+        }));
         [this.idToken, this.profile].forEach(e => e.reset());
         this.expiresAt = -1;
     }
 }
 
 const auth0Client = Auth.init();
-console.log(auth0Client.self())
+// console.log(auth0Client.self())
+
 export default auth0Client.self();
