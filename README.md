@@ -21,6 +21,7 @@ I try follow that and refactor code for better-readability and type-safe.
 
 Have a good DX!
 
+
 ## Refalenced
 
 
@@ -34,6 +35,10 @@ auth0/auth0.js: Auth0 headless browser sdk
 
 Lodash
 : https://lodash.com/
+
+
+Auth0を使ってGoogleのソーシャルログイン機能を試す #Auth0JP #Auth0アドカレ | Developers.IO
+: https://dev.classmethod.jp/articles/auth0-google/
 
 
 
