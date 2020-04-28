@@ -1,24 +1,19 @@
-import React, { Component, ComponentProps } from 'react';
-import { withRouter } from 'react-router-dom';
+import React, { Component } from 'react';
+import { withRouter,RouteComponentProps } from 'react-router-dom';
 import auth0Client from './Auth';
 
-type ExMem<B, O> = B & { [N in keyof O]: O[N] }
-type Prop = ExMem<ComponentProps<any>, { history: string }>
+// type ExMem<B, O> = B & { [N in keyof O]: O[N] }
+interface IProps extends RouteComponentProps { }
 
-class Callback extends Component<Prop> {
-   constructor(props: Prop) { super(props); }
-
+class Callback extends Component<IProps> {
    async componentDidMount() {
       const ret = await auth0Client.handleAuthentication();
-      // console.log(ret);
       console.log("Callbacked", ret, this.props)
-      this.props.history.replace('/', "");
+      this.props.history.replace('/');
    }
 
    render() {
-      return (
-         <p>Loading profile...</p>
-      );
+      return (<p>Loading profile...</p>);
    }
 }
 
