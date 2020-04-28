@@ -9,7 +9,9 @@ class Callback extends Component<Prop> {
    constructor(props: Prop) { super(props); }
 
    async componentDidMount() {
-      await auth0Client.handleAuthentication();
+      const ret = await auth0Client.handleAuthentication();
+      // console.log(ret);
+      console.log("Callbacked", ret, this.props)
       this.props.history.replace('/', "");
    }
 
