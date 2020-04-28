@@ -1,5 +1,6 @@
-import React, {  ReactNode } from "react"
-export default function Container(props: {
+import React, { ReactNode } from "react"
+
+function Container(props: {
    children?: ReactNode
 }) {
    return (
@@ -10,3 +11,5 @@ export default function Container(props: {
       </div>
    )
 }
+
+export default Container;
